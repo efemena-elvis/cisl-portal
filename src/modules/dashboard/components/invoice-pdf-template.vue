@@ -95,7 +95,7 @@
     </section>
 
     <!-- ===== QR Code Section ===== -->
-    <section class="qr-section">
+    <!-- <section class="qr-section">
       <img
         :src="qrCodeDataUrl"
         alt="QR Code"
@@ -105,7 +105,7 @@
       <div class="qr-text">
         <p>Scan to verify invoice</p>
       </div>
-    </section>
+    </section> -->
   </div>
 </template>
 

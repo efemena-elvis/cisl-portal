@@ -83,6 +83,22 @@
             message: 'Business RC is a required field',
           }"
         />
+
+        <!-- TAXPAYER ENTITY -->
+        <TextFieldInput
+          labelId="taxpayerEntity"
+          labelTitle="Taxpayer Entity ID"
+          :inputType="IInputType.Text"
+          :inputValue="signupPayload.taxpayer_entity"
+          inputPlaceholder="Provide a taxpayer entity ID"
+          isRequired
+          @inputChanged="signupPayload.taxpayer_entity = $event"
+          @inputValidated="payloadValidity.taxpayer_entity = $event"
+          :errorHandler="{
+            validator: 'validateRequired',
+            message: 'Taxpayer entity ID is a required field',
+          }"
+        />
       </template>
 
       <button
@@ -111,6 +127,7 @@ type ISignupInputType = {
   password: string;
   tin_number: string;
   rc_number: string;
+  taxpayer_entity: string;
 };
 
 type IInputValidity = {
@@ -119,6 +136,7 @@ type IInputValidity = {
   password: boolean;
   rc_number: boolean;
   tin_number: boolean;
+  taxpayer_entity: boolean;
 };
 
 const signupPayload = ref<ISignupInputType>({
@@ -127,6 +145,7 @@ const signupPayload = ref<ISignupInputType>({
   password: "",
   tin_number: "",
   rc_number: "",
+  taxpayer_entity: "",
 });
 
 const payloadValidity = ref<IInputValidity>({
@@ -135,6 +154,7 @@ const payloadValidity = ref<IInputValidity>({
   password: false,
   tin_number: false,
   rc_number: false,
+  taxpayer_entity: false,
 });
 
 const router = useRouter();
@@ -160,19 +180,27 @@ const isSignupReady = computed(() => {
   return signupPayload.value.tin_number &&
     signupPayload.value.rc_number &&
     payloadValidity.value.tin_number &&
-    payloadValidity.value.rc_number
+    payloadValidity.value.rc_number &&
+    payloadValidity.value.taxpayer_entity
     ? false
     : true;
 });
 
 const getSignupPayload = computed(() => {
-  const { business_name, email, password, tin_number, rc_number } =
-    signupPayload.value;
+  const {
+    business_name,
+    email,
+    password,
+    tin_number,
+    rc_number,
+    taxpayer_entity,
+  } = signupPayload.value;
   return {
     company_name: business_name,
     email_address: email,
     tin: tin_number,
     rc_number,
+    taxpayer_entity,
     password,
     business_type_id: 2,
     phone_number: "",

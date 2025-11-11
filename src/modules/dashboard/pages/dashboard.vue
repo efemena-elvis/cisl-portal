@@ -91,19 +91,19 @@ const fetchDashboardData = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const mockApiResponse = {
       stats: {
-        totalSynced: 10,
-        pendingIrn: 10,
+        totalSynced: 0,
+        pendingIrn: 0,
         pendingSubmission: 0,
         approvedByFirs: 0,
       },
       dailySync: [
-        { date: "Oct 1", count: 5 },
-        { date: "Oct 2", count: 8 },
-        { date: "Oct 3", count: 3 },
-        { date: "Oct 4", count: 12 },
-        { date: "Oct 5", count: 7 },
-        { date: "Oct 6", count: 9 },
-        { date: "Oct 7", count: 15 },
+        { date: "Oct 1", count: 8 },
+        { date: "Oct 2", count: 0 },
+        { date: "Oct 3", count: 0 },
+        { date: "Oct 4", count: 4 },
+        { date: "Oct 5", count: 2 },
+        { date: "Oct 6", count: 0 },
+        { date: "Oct 7", count: 4 },
       ],
       recentInvoices: [],
     };
