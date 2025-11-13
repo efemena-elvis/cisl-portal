@@ -9,4 +9,5 @@ export const dashboardRoutes = {
   submitInvoice: `${invoiceNameSpace}/sign`,
   transmitInvoice: `${transmittingNameSpace}`,
   qrCode: `${qrCodeNameSpace}`,
+  incomingInvoices: `${transmittingNameSpace}/received`,
 };

@@ -30,10 +30,8 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useString } from "@/shared/composables/useString";
 import dateUtil from "@/shared/composables/useDate";
-import PageLayout from "@/shared/components/global-comps/page-layout.vue";
 import TableContainer from "@/shared/components/table-comps/table-container.vue";
 import TableContainerBody from "@/shared/components/table-comps/table-container-body.vue";
-import FilterBar from "../components/filter-bar.vue";
 import Pagination from "@/shared/components/global-comps/pagination.vue";
 import { useDashboardStore } from "@/modules/dashboard/store";
 import { Invoice } from "@/models/invoice-type";
@@ -50,12 +48,13 @@ interface IPaging {
 // --- COMPOSABLES ---
 const { getBoldTableText, getStatus, maskCode, formatNumber } = useString();
 
+const { fetchIncomingInvoices } = useDashboardStore();
 const { submittedInvoices } = storeToRefs(useDashboardStore());
 
 // --- REACTIVE STATE ---
 const isFetchingInvoices = ref(true);
 const activeTab = ref<"pending" | "approved" | "rejected">("pending");
-const rawInvoices = ref<Invoice[]>([]);
+const rawInvoices = ref<any[]>([]);
 
 // --- PAGINATION STATE ---
 const paginationData = ref({
@@ -94,11 +93,12 @@ const paginationDescription = computed(() => {
 
 // --- TABLE CONFIGURATION ---
 const baseTableHeader = [
-  { slug: "number", title: "Invoice #" },
-  { slug: "customer", title: "Customer Name" },
-  { slug: "amount", title: "Amount" },
+  { slug: "no", title: "#" },
+  { slug: "created_at", title: "Created At" },
+  { slug: "id", title: "Id" },
+  { slug: "provider", title: "Provider" },
   { slug: "irn", title: "IRN #" },
-  { slug: "status", title: "Status" },
+  { slug: "status", title: "Payment Status" },
 ];
 
 const currentTableHeader = computed(() => {
@@ -128,24 +128,20 @@ const getInvoiceDate = (date: string) => {
 
 // --- COMPUTED PROPERTIES ---
 const invoicesForTable = computed(() => {
-  return rawInvoices.value.map((invoice) => ({
-    id: invoice.invoice_id,
-    date: getInvoiceDate(invoice.date),
-    number: getBoldTableText(invoice.invoice_number),
-    customer: invoice.customer_name,
-    irn: maskCode(invoice.transformed_invoice.irn) || "------",
-    amount: getBoldTableText(
-      `${invoice.currency_code} ${formatNumber(invoice.total)}`
-    ),
+  return rawInvoices.value.map((invoice, index) => ({
+    no: index + 1,
+    created_at: getInvoiceDate(invoice.createdAt),
+    id: maskCode(invoice.id) || "------",
+    provider: invoice.provider,
+    irn: invoice.irn,
     status: getStatus(
-      invoice.status === "Approved"
+      invoice.paymentStatus.toLowerCase() === "received"
         ? "success"
-        : invoice.status === "Rejected"
+        : invoice.paymentStatus === "Rejected"
           ? "failed"
           : "pending",
-      "Invoice transmitted"
+      invoice.paymentStatus
     ),
-    rejectionReason: `<span class="text-red-600">${""}</span>`,
   }));
 });
 
@@ -161,11 +157,12 @@ watch(activeTab, (newTab) => {
 const fetchInvoices = async (tab: "pending" | "approved" | "rejected") => {
   isFetchingInvoices.value = true;
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // await new Promise((resolve) => setTimeout(resolve, 1000));
+    const response = await fetchIncomingInvoices();
+    console.log(response.data);
 
     const mockApiResponse = {
-      // invoices: submittedInvoices.value || [],
-      invoices: [],
+      invoices: response.data.data,
       pagination: {
         current_page: 1,
         page_count: Array.isArray(submittedInvoices.value)
@@ -178,10 +175,11 @@ const fetchInvoices = async (tab: "pending" | "approved" | "rejected") => {
       },
     };
 
-    rawInvoices.value = mockApiResponse.invoices as Invoice[];
+    rawInvoices.value = mockApiResponse.invoices as any[];
+    console.log("RAW===>", rawInvoices.value);
     paginationData.value[tab] = mockApiResponse.pagination;
   } catch (error) {
-    console.error(`Failed to fetch ${tab} invoices:`, error);
+    console.error(`Failed to fetch incoming invoices:`, error);
     rawInvoices.value = [];
   } finally {
     isFetchingInvoices.value = false;

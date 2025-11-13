@@ -130,10 +130,17 @@ export function useDashboardActions() {
     );
   };
 
+  const fetchIncomingInvoices = async () => {
+    return $api.fetch(dashboardRoutes.incomingInvoices, {
+      resolve: false,
+    });
+  };
+
   return {
     fetchBusinessInvoices,
     transformBusinessInvoice,
     submitBusinessInvoice,
     getQrCode,
+    fetchIncomingInvoices,
   };
 }
