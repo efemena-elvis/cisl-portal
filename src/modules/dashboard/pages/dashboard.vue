@@ -27,9 +27,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import StatCard from "../components/stat-card..vue";
 import DashboardChart from "../components/dashboard-chart.vue";
+import { useStorage } from "@/shared/composables/useStorage";
+import constants from "@/utilities/constants";
+
 // import RecentActivity from "../components/recent-activity.vue";
 // import LoadApiKeys from "../components/load-api-keys.vue";
 
@@ -48,6 +51,11 @@ interface DailySyncData {
   date: string;
   count: number;
 }
+
+const { IMPORTED_INVOICES, TRANSFORMED_INVOICES, SUBMITTED_INVOICES } =
+  constants;
+
+const { getStorage } = useStorage();
 
 // --- REACTIVE STATE ---
 const stats = ref([
@@ -84,6 +92,78 @@ const recentInvoices = ref<Invoice[]>([]);
 const dailySyncData = ref<DailySyncData[]>([]);
 const isFetchingRecentInvoices = ref<boolean>(true); // This can be renamed to a general `isLoading`
 
+const getLength = (data: unknown): number =>
+  Array.isArray(data) ? data.length : 0;
+
+const getImportedInvoices = computed(() => {
+  return getStorage({
+    storage_name: IMPORTED_INVOICES,
+    storage_type: "array",
+  });
+});
+
+const getTransformedInvoices = computed(() => {
+  return getStorage({
+    storage_name: TRANSFORMED_INVOICES,
+    storage_type: "array",
+  });
+});
+
+const getSubmittedInvoices = computed(() => {
+  return getStorage({
+    storage_name: SUBMITTED_INVOICES,
+    storage_type: "array",
+  });
+});
+
+const getTotalSyncedInvoices = computed(() => {
+  return (
+    getLength(getImportedInvoices.value) +
+    getLength(getTransformedInvoices.value) +
+    getLength(getSubmittedInvoices.value)
+  );
+});
+
+const getTotalPendingIRNInvoices = computed(() => {
+  return getLength(getImportedInvoices.value);
+});
+
+const getTotalPendingSubmissionInvoices = computed(() => {
+  return getLength(getTransformedInvoices.value);
+});
+
+// const getTotalApprovedByFirsInvoices = computed(() => {
+//   return getLength(getSubmittedInvoices.value);
+// });
+
+// --- HELPER: Generate current week (Sunday to Saturday) ---
+const generateCurrentWeek = (todayCount: number): DailySyncData[] => {
+  const today = new Date();
+  const currentDayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+
+  // Calculate Sunday of current week
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - currentDayOfWeek);
+
+  const weekData: DailySyncData[] = [];
+
+  // Generate 7 days (Sunday to Saturday)
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + i);
+
+    const monthShort = date.toLocaleString("en-US", { month: "short" });
+    const day = date.getDate();
+
+    weekData.push({
+      date: `${monthShort} ${day}`,
+      count: i === currentDayOfWeek ? todayCount : 0,
+    });
+  }
+
+  return weekData;
+};
+
 // --- API LOGIC (MOCKED) ---
 const fetchDashboardData = async () => {
   isFetchingRecentInvoices.value = true;
@@ -91,20 +171,12 @@ const fetchDashboardData = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const mockApiResponse = {
       stats: {
-        totalSynced: 0,
-        pendingIrn: 0,
-        pendingSubmission: 0,
+        totalSynced: getTotalSyncedInvoices.value,
+        pendingIrn: getTotalPendingIRNInvoices.value,
+        pendingSubmission: getTotalPendingSubmissionInvoices.value,
         approvedByFirs: 0,
       },
-      dailySync: [
-        { date: "Oct 1", count: 8 },
-        { date: "Oct 2", count: 0 },
-        { date: "Oct 3", count: 0 },
-        { date: "Oct 4", count: 4 },
-        { date: "Oct 5", count: 2 },
-        { date: "Oct 6", count: 0 },
-        { date: "Oct 7", count: 4 },
-      ],
+      dailySync: generateCurrentWeek(getTotalSyncedInvoices.value),
       recentInvoices: [],
     };
 

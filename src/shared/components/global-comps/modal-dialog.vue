@@ -80,7 +80,7 @@ export default {
   computed: {
     getModalWrapperStyle() {
       return `${this.modal_style.shape || "rounded-2xl"} ${
-        this.modal_style.size || "modal-sm"
+        this.modal_style.size || "modal-lg"
       } ${this.modal_style.background || "bg-neutral-10"}`;
     },
   },

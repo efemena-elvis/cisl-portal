@@ -97,21 +97,59 @@ const dashboardRoutes: IRouteType[] = [
         },
       },
 
+      // {
+      //   path: "/invoice-tracker",
+      //   name: "InvoiceTracker",
+      //   component: () =>
+      //     import(
+      //       /* webpackChunkName: "dashboard-module" */ "@/modules/dashboard/pages/invoice-tracker.vue"
+      //     ),
+      //   meta: {
+      //     requiresAuth: true,
+      //     title: "Invoice Tracker",
+      //     pageMeta: {
+      //       title: "Invoice Tracker",
+      //       description: "CISL Invoice Tracker",
+      //     },
+      //   },
+      // },
+
       {
         path: "/invoice-tracker",
-        name: "InvoiceTracker",
         component: () =>
           import(
-            /* webpackChunkName: "dashboard-module" */ "@/modules/dashboard/pages/invoice-tracker.vue"
+            /* webpackChunkName: "dashboard-module" */ "@/modules/dashboard/layouts/invoice-tracker-layout.vue"
           ),
-        meta: {
-          requiresAuth: true,
-          title: "Invoice Tracker",
-          pageMeta: {
-            title: "Invoice Tracker",
-            description: "CISL Invoice Tracker",
+        children: [
+          {
+            path: "outgoing",
+            name: "InvoiceTrackerOutgoing",
+            component: () =>
+              import("@/modules/dashboard/pages/invoice-tracker-outgoing.vue"),
+            meta: {
+              requiresAuth: true,
+              title: "Outgoing Invoice",
+              pageMeta: {
+                title: "Outgoing Invoice",
+                description: "CISL Outgoing Invoice",
+              },
+            },
           },
-        },
+          {
+            path: "incoming",
+            name: "InvoiceTrackerIncoming",
+            component: () =>
+              import("@/modules/dashboard/pages/invoice-tracker-incoming.vue"),
+            meta: {
+              requiresAuth: true,
+              title: "Incoming Invoice",
+              pageMeta: {
+                title: "Incoming Invoice",
+                description: "CISL Incoming Invoice",
+              },
+            },
+          },
+        ],
       },
 
       {

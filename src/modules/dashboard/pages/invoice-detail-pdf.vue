@@ -39,7 +39,8 @@ import { Invoice, TransformedInvoice } from "@/models/invoice-type";
 
 // --- STATE SETUP ---
 const route = useRoute();
-const { transformedInvoices } = storeToRefs(useDashboardStore());
+const { transformedInvoices, submittedInvoices } =
+  storeToRefs(useDashboardStore());
 
 const invoice = ref<Invoice | TransformedInvoice | null>(null);
 const invoiceTemplateRef = ref<{ pdfContent: HTMLElement } | null>(null);
@@ -47,9 +48,11 @@ const invoiceTemplateRef = ref<{ pdfContent: HTMLElement } | null>(null);
 // --- FETCH INVOICE ---
 onMounted(() => {
   const invoiceId = route.params.invoice_id as string;
-  const foundInvoice = (transformedInvoices.value as Invoice[])?.find(
-    (inv) => inv.invoice_id === invoiceId
-  );
+  const invoiceList = [
+    ...(transformedInvoices.value as Invoice[]),
+    ...(submittedInvoices.value as Invoice[]),
+  ];
+  const foundInvoice = invoiceList.find((inv) => inv.invoice_id === invoiceId);
 
   if (foundInvoice) {
     invoice.value = foundInvoice;

@@ -1,85 +1,51 @@
 <template>
-  <PageLayout
-    title="Invoice Tracker"
-    description="Track the real-time status of all invoices submitted to FIRS for final validation."
-    :show-action-btn="false"
+  <!-- TABLE CONTAINER -->
+  <TableContainer
+    :table-header="currentTableHeader"
+    :table-body="invoicesForTable"
+    :is-loading="isFetchingInvoices"
+    :empty-data="emptyDataConfig"
   >
-    <!-- TABLE SECTION -->
-    <div class="table-section">
-      <!-- TABS -->
-      <!-- <div class="tabs-container">
-        <button
-          @click="setActiveTab('pending')"
-          :class="['tab-item', { 'tab-item--active': activeTab === 'pending' }]"
-        >
-          Pending
-        </button>
+    <TableContainerBody
+      v-for="(invoice, index) in invoicesForTable"
+      :key="index"
+      :table-header="currentTableHeader"
+      :table-data="invoice"
+    />
+  </TableContainer>
 
-        <button
-          @click="setActiveTab('approved')"
-          :class="[
-            'tab-item',
-            { 'tab-item--active': activeTab === 'approved' },
-          ]"
-        >
-          Approved
-        </button>
+  <!-- PAGINATION -->
+  <div
+    v-if="!isFetchingInvoices && currentPaginationData.total_records > 0"
+    class="pagination-container"
+  >
+    <Pagination
+      :page-description="paginationDescription"
+      :paging-data="currentPaginationData"
+    />
+  </div>
 
-        <button
-          @click="setActiveTab('rejected')"
-          :class="[
-            'tab-item',
-            { 'tab-item--active': activeTab === 'rejected' },
-          ]"
-        >
-          Rejected
-        </button>
-      </div> -->
-
-      <!-- FILTER BAR -->
-      <FilterBar />
-
-      <!-- TABLE CONTAINER -->
-      <TableContainer
-        :table-header="currentTableHeader"
-        :table-body="invoicesForTable"
-        :is-loading="isFetchingInvoices"
-        :empty-data="emptyDataConfig"
-      >
-        <TableContainerBody
-          v-for="(invoice, index) in invoicesForTable"
-          :key="index"
-          :table-header="currentTableHeader"
-          :table-data="invoice"
-        />
-      </TableContainer>
-
-      <!-- PAGINATION -->
-      <div
-        v-if="!isFetchingInvoices && currentPaginationData.total_records > 0"
-        class="pagination-container"
-      >
-        <Pagination
-          :page-description="paginationDescription"
-          :paging-data="currentPaginationData"
-        />
-      </div>
-    </div>
-  </PageLayout>
+  <teleport to="body" v-if="showQrCodeModal">
+    <QrCodeModal
+      :irn="selectedInvoiceIRN"
+      @closeTriggered="showQrCodeModal = false"
+    />
+  </teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, h } from "vue";
 import { useString } from "@/shared/composables/useString";
 import dateUtil from "@/shared/composables/useDate";
-import PageLayout from "@/shared/components/global-comps/page-layout.vue";
 import TableContainer from "@/shared/components/table-comps/table-container.vue";
 import TableContainerBody from "@/shared/components/table-comps/table-container-body.vue";
-import FilterBar from "../components/filter-bar.vue";
 import Pagination from "@/shared/components/global-comps/pagination.vue";
+import TableLink from "@/shared/components/table-comps/table-link.vue";
+import QrCodeModal from "@/modules/dashboard/modals/qr-code-modal.vue";
 import { useDashboardStore } from "@/modules/dashboard/store";
 import { Invoice } from "@/models/invoice-type";
 import { storeToRefs } from "pinia";
+import { TableActionBtn } from "@/shared/components";
 
 // --- INTERFACES AND TYPES ---
 interface IPaging {
@@ -121,6 +87,15 @@ const paginationData = ref({
   },
 });
 
+const selectedInvoiceIRN = ref<string>("");
+
+const showQrCodeModal = ref(false);
+
+const toggleQrCodeModal = (irn: string) => {
+  selectedInvoiceIRN.value = irn;
+  showQrCodeModal.value = true;
+};
+
 const currentPaginationData = computed(
   () => paginationData.value[activeTab.value]
 );
@@ -136,10 +111,12 @@ const paginationDescription = computed(() => {
 
 // --- TABLE CONFIGURATION ---
 const baseTableHeader = [
-  { slug: "number", title: "Invoice #" },
+  { slug: "no", title: "#" },
   { slug: "customer", title: "Customer Name" },
   { slug: "amount", title: "Amount" },
   { slug: "irn", title: "IRN #" },
+  { slug: "pdf", title: "Invoice (PDF)" },
+  { slug: "qrCode", title: "QR Code" },
   { slug: "status", title: "Status" },
 ];
 
@@ -159,8 +136,8 @@ const currentTableHeader = computed(() => {
 });
 
 const emptyDataConfig = computed(() => ({
-  title: `No ${activeTab.value} Invoices`,
-  description: `Invoices with the status "${activeTab.value}" will appear here.`,
+  title: `No Outgoing Invoices`,
+  description: `Invoices with the status "Outgoing" will appear here.`,
 }));
 
 const getInvoiceDate = (date: string) => {
@@ -170,22 +147,32 @@ const getInvoiceDate = (date: string) => {
 
 // --- COMPUTED PROPERTIES ---
 const invoicesForTable = computed(() => {
-  return rawInvoices.value.map((invoice) => ({
-    id: invoice.invoice_id,
-    date: getInvoiceDate(invoice.date),
-    number: getBoldTableText(invoice.invoice_number),
+  return rawInvoices.value.map((invoice, index) => ({
+    no: index + 1,
     customer: invoice.customer_name,
-    irn: maskCode(invoice.transformed_invoice.irn) || "------",
     amount: getBoldTableText(
       `${invoice.currency_code} ${formatNumber(invoice.total)}`
     ),
+    irn: maskCode(invoice.transformed_invoice.irn) || "------",
+    pdf: h(TableLink, {
+      linkText: "View Invoice",
+      linkRoute: `/view-invoice/${invoice.invoice_id}`,
+    }),
+    qrCode: h(TableActionBtn, {
+      key: invoice.invoice_id,
+      showPrimaryBtn: true,
+      showSecondaryBtn: false,
+      primaryBtnText: "View QRCode",
+      onPrimaryActionClicked: () =>
+        toggleQrCodeModal(invoice.transformed_invoice.irn),
+    }),
     status: getStatus(
       invoice.status === "Approved"
         ? "success"
         : invoice.status === "Rejected"
           ? "failed"
           : "pending",
-      "Awaiting FIRS approval"
+      "Invoice transmitted"
     ),
     rejectionReason: `<span class="text-red-600">${""}</span>`,
   }));
@@ -209,9 +196,13 @@ const fetchInvoices = async (tab: "pending" | "approved" | "rejected") => {
       invoices: submittedInvoices.value || [],
       pagination: {
         current_page: 1,
-        page_count: 2,
+        page_count: Array.isArray(submittedInvoices.value)
+          ? submittedInvoices.value.length
+          : 0,
         total_pages_count: 1,
-        total_records: 2,
+        total_records: Array.isArray(submittedInvoices.value)
+          ? submittedInvoices.value.length
+          : 0,
       },
     };
 
@@ -282,6 +273,6 @@ onMounted(() => {
 }
 
 .pagination-container {
-  @apply pt-6 border-t border-t-grey-100;
+  @apply pt-6;
 }
 </style>

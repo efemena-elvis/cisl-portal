@@ -120,9 +120,20 @@ export function useDashboardActions() {
     );
   };
 
+  const getQrCode = async (invoiceIRN: string) => {
+    return $api.push(
+      dashboardRoutes.qrCode,
+      { irn: invoiceIRN },
+      {
+        resolve: false,
+      }
+    );
+  };
+
   return {
     fetchBusinessInvoices,
     transformBusinessInvoice,
     submitBusinessInvoice,
+    getQrCode,
   };
 }

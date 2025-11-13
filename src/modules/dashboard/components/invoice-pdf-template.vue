@@ -18,6 +18,9 @@
       <div class="invoice-title-section">
         <h2 class="invoice-title">INVOICE</h2>
         <p class="invoice-number">#{{ invoice.invoice_number }}</p>
+        <p class="invoice-number">
+          #IRN: {{ invoice.transformed_invoice.irn }}
+        </p>
       </div>
     </header>
 

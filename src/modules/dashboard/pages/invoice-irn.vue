@@ -142,13 +142,15 @@ const fetchInvoices = async () => {
       payload: {},
     });
 
+    console.log("response......", response);
+
     const mockApiResponse = {
       invoices: importedInvoices.value || [],
       pagination: {
         current_page: Number(page) || 1,
-        page_count: 10,
+        page_count: response.data.imported?.length || 0,
         total_pages_count: 1,
-        total_records: 10,
+        total_records: response.data.imported?.length || 0,
       },
     };
 

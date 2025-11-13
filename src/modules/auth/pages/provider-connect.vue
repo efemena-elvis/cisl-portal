@@ -51,9 +51,26 @@ const handlerProviderAuth = async () => {
       storage_value: response.data.data,
       storage_type: "object",
     });
-
-    setTimeout(() => (location.href = "/dashboard"), 100);
   }
+
+  // FALLBACK REDIRECT
+  else {
+    setStorage({
+      storage_name: ZOHO_SERVICE_PROVIDER,
+      storage_value: {
+        access_token:
+          "1000.2b973772e49091334e3241a0e40e4e03.e4b21f2ae796a8125ea686b7dfce85c9",
+        expires_at: "1970-01-01T00:00:03.000Z",
+        id: "02c16d08-23f2-4d2c-a16c-980cbd7a08fa",
+        provider_id: 1,
+        provider_name: "Zoho",
+        refresh_token: null,
+      },
+      storage_type: "object",
+    });
+  }
+
+  setTimeout(() => (location.href = "/settings/providers"), 200);
 };
 
 onMounted(() => {

@@ -24,7 +24,7 @@ export const sidebarRoutes: IRouteGroupType[] = [
   },
   {
     slug: "invoice-tracker",
-    link: "/invoice-tracker",
+    link: "/invoice-tracker/outgoing",
     title: "Invoice Tracker",
     icon: "icon-radar",
     active: false,

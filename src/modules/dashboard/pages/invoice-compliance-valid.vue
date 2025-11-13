@@ -42,6 +42,13 @@
       :paging-data="validPaginationData"
     />
   </div>
+
+  <teleport to="body" v-if="showQrCodeModal">
+    <QrCodeModal
+      :irn="selectedInvoiceIRN"
+      @closeTriggered="showQrCodeModal = false"
+    />
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -58,6 +65,7 @@ import TableLink from "@/shared/components/table-comps/table-link.vue";
 import { useDashboardStore } from "@/modules/dashboard/store";
 import { Invoice } from "@/models/invoice-type";
 import useEvents from "@/shared/composables/useEvents";
+import QrCodeModal from "@/modules/dashboard/modals/qr-code-modal.vue";
 
 // --- INTERFACES AND TYPES ---
 interface IPaging {
@@ -91,12 +99,21 @@ const validPaginationData = ref<IPaging>({
   total_records: 0,
 });
 
+const selectedInvoiceIRN = ref<string>("");
+
+const showQrCodeModal = ref(false);
+
+const toggleQrCodeModal = (irn: string) => {
+  selectedInvoiceIRN.value = irn;
+  showQrCodeModal.value = true;
+};
+
 const validPaginationDesc = computed(
   () =>
     `Showing ${validPaginationData.value.total_records > 0 ? 1 : 0}-${rawValidInvoices.value.length} of ${validPaginationData.value.total_records} invoices`
 );
 
-// --- TABLE CONFIGURATION ---
+// --- TABLE CONFIGURATION ---.;
 const validTableHeader = ref([
   // { slug: "date", title: "Date" },
   { slug: "number", title: "Invoice #" },
@@ -150,7 +167,8 @@ const validInvoicesForTable = computed(() =>
       isSecondaryActionDelete: false,
       isActionLoading: activeInvoiceId.value === invoice.invoice_id,
       onPrimaryActionClicked: () => handleSingleSubmit(invoice),
-      onSecondaryActionClicked: () => {},
+      onSecondaryActionClicked: () =>
+        toggleQrCodeModal(invoice.transformed_invoice.irn),
     }),
   }))
 );
@@ -180,11 +198,16 @@ const fetchInvoices = async () => {
 
     const mockApiResponse = {
       invoices: transformedInvoices.value || [],
+
       pagination: {
         current_page: 1,
-        page_count: 2,
+        page_count: Array.isArray(transformedInvoices.value)
+          ? transformedInvoices.value.length
+          : 0,
         total_pages_count: 1,
-        total_records: 2,
+        total_records: Array.isArray(transformedInvoices.value)
+          ? transformedInvoices.value.length
+          : 0,
       },
     };
     rawValidInvoices.value = mockApiResponse.invoices as Invoice[];
@@ -222,6 +245,12 @@ const submitToFirs = async (invoice: Invoice) => {
       pushToastAlert({
         type: "success",
         message: `Invoice No: ${invoiceNumber} submitted successfully to FIRS!`,
+      });
+    } else if (response.status === 400 || response.code === 400) {
+      pushToastAlert({
+        type: "error",
+        message:
+          "Unable to process your request, confirm this is not a duplicate request",
       });
     }
   } catch (error) {

@@ -51,8 +51,6 @@ const handleOTPChange = (otp: string) => {
 };
 
 const handleAccountVerification = async () => {
-  console.log(otpPayload.value);
-
   const response = await processAPIRequest({
     action: verifyAccount,
     payload: otpPayload.value,
@@ -60,6 +58,11 @@ const handleAccountVerification = async () => {
     btnText: "Verify Account",
     alertHandler: {
       200: {
+        message: "Account verified!",
+        description: "You can now login to your dashboard.",
+        type: "success",
+      },
+      201: {
         message: "Account verified!",
         description: "You can now login to your dashboard.",
         type: "success",
